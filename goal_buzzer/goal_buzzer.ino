@@ -4,7 +4,7 @@
 
 //------- Replace the following! ------
 char ssid[] = "CheCarino";       // your network SSID (name)
-char password[] = "tesoro1234";  // your network key
+char password[] = "######";  // your network key
 char* test = "";
 char* feed_url = "http://live.nhle.com/GameData/RegularSeasonScoreboardv3.jsonp?loadScoreboard=jQuery110105207217424176633_1428694268811&_=1428694268812";
 WiFiClientSecure client;
