@@ -6,20 +6,20 @@
 //------- Replace the following! ------
 char ssid[] = "#";       // your network SSID (name)
 char password[] = "#";  // your network key
-String team = "Los Angeles";
-String team_type = "None";
 char* feed_url = "http://live.nhle.com/GameData/RegularSeasonScoreboardv3.jsonp?loadScoreboard=jQuery110105207217424176633_1428694268811&_=1428694268812";
 
+String team = "Los Angeles";
 String data;
+
 bool game_started = false;
 int interval = 10000;
-int current_game = 0;
+int current_game_id = 0;
 int team_goals = 0;
 int opponent_goals = 0;
 int spread = 0;
 int spread_prev = 0;
-WiFiClientSecure client;
 
+WiFiClientSecure client;
 
 void setup() {
   Serial.begin(115200);
@@ -33,11 +33,9 @@ void setup() {
     delay(100);
   }
   IPAddress ip = WiFi.localIP();
+  delay(200);
   Serial.println('Connected!');
   Serial.println(ip);
-
-
-  
 }
 
 void loop() {
@@ -71,25 +69,20 @@ void loop() {
         if ((away_team == team) || (home_team == team)){
           if (game_status == "LIVE"){
             Serial.println("game is on now!!");
-            current_game = game_result["id"];
+            current_game_id = game_result["id"];
             game_started = true;
-            if (away_team == team){
-              team_type = "away";
-            }
-            if (home_team == team){
-              team_type = "home";
-            }
           }else if ((game_status != "FINAL") || (game_status != "FINAL OT")) {
             Serial.println("waiting for game to start");
           }
         }
       }
 
-      if (current_game == game_result["id"]){
-        if (team_type == "away"){
+      if (current_game_id == game_result["id"]){
+        if (away_team == team){
           team_goals = game_result["ats"];
           opponent_goals = game_result["hts"];
-        }else{
+        }
+        if (home_team == team){
           team_goals = game_result["hts"];
           opponent_goals = game_result["ats"];
         }
