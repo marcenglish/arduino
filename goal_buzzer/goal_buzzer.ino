@@ -6,7 +6,7 @@
 //------- Replace the following! ------
 char ssid[] = "#";       // your network SSID (name)
 char password[] = "#";  // your network key
-String team = "Florida";
+String team = "Los Angeles";
 String team_type = "None";
 char* feed_url = "http://live.nhle.com/GameData/RegularSeasonScoreboardv3.jsonp?loadScoreboard=jQuery110105207217424176633_1428694268811&_=1428694268812";
 
@@ -14,8 +14,10 @@ String data;
 bool game_started = false;
 int interval = 10000;
 int current_game = 0;
-int team_goals = 1;
-int current_goals = 1;
+int team_goals = 0;
+int opponent_goals = 0;
+int spread = 0;
+int spread_prev = 0;
 WiFiClientSecure client;
 
 
@@ -40,7 +42,6 @@ void setup() {
 
 void loop() {
   data = http_get(feed_url);
-  Serial.println("Go...");
   //JSON Parsing Prep
   //Shave start
   int start_index = data.indexOf('[');
@@ -51,6 +52,8 @@ void loop() {
   String test_data;
 
   while (data.length() > 10) {
+      //Processing entire data block overruns memory, so it is split per-game.
+      //Get dict closing bracket, use as split token
       end_index = data.indexOf('}');
       test_data = data.substring(0,end_index)+"}";
       
@@ -63,7 +66,7 @@ void loop() {
       String game_status = game_result["bs"];
 
       //A given team may have previous and upcoming games listed.  
-      //Get the game id of the live game
+      //Filter out the live game, get its game id and set home/away
       if (game_started != true) {
         if ((away_team == team) || (home_team == team)){
           if (game_status == "LIVE"){
@@ -76,33 +79,40 @@ void loop() {
             if (home_team == team){
               team_type = "home";
             }
-          }else if (game_status != "FINAL"){
+          }else if ((game_status != "FINAL") || (game_status != "FINAL OT")) {
             Serial.println("waiting for game to start");
           }
         }
       }
 
-      //
-      if ((away_team == team) || (home_team == team)){
-//      if (current_game == game_result["id"]){
-        String away_team_goals = game_result["ats"];
-        String home_team_goals = game_result["hts"];
+      if (current_game == game_result["id"]){
+        if (team_type == "away"){
+          team_goals = game_result["ats"];
+          opponent_goals = game_result["hts"];
+        }else{
+          team_goals = game_result["hts"];
+          opponent_goals = game_result["ats"];
+        }
+        
+        spread = (team_goals - opponent_goals);
+        
         Serial.println(game_status);
-        Serial.println(away_team);
-        Serial.println(away_team_goals);
-        Serial.println(home_team);
-        Serial.println(home_team_goals);
-        Serial.println("---");
-//        if (team_type == "away"){
-//          current_goals = game_result["ats"].toInt();          
-//        }
-//        if (team_type == "home"){
-//          current_goals = game_result["hts"].toInt(); 
-//        }
-//        if (current_goals > team_goals){
-//          announce_goal();
-//          team_goals = current_goals;
-//        }
+        Serial.println("Spread is: ");
+        Serial.println(spread);
+
+        if (spread > spread_prev){
+          announce_goal();
+        }
+        if (spread > 0){
+          Serial.println("We're ahead!");
+        }
+        if ((game_status == "FINAL") || (game_status == "FINAL OT")){
+          if (spread > 0){
+            announce_win();
+          }
+          game_started = false;
+        }
+        spread_prev = spread;
       }
       data = data.substring(end_index+2);
   }  
@@ -111,6 +121,10 @@ void loop() {
 
 void announce_goal(){
   Serial.println("Goal scored!");
+}
+
+void announce_win(){
+  Serial.println("We won!");
 }
 
 String http_get(String url){
