@@ -12,7 +12,7 @@ char ssid[] = "#";       // your network SSID (name)
 char password[] = "#";  // your network key
 char* feed_url = "http://live.nhle.com/GameData/RegularSeasonScoreboardv3.jsonp?loadScoreboard=jQuery110105207217424176633_1428694268811&_=1428694268812";
 
-String team = "Detroit";
+String team = "San Jose";
 String data;
 int buttonState = 0;         // variable for reading the pushbutton status
 bool game_started = false;
@@ -44,6 +44,7 @@ void setup() {
   Serial.println("Connected!");
   delay(100);
   Serial.println(ip);
+  
 }
 
 void loop() {
@@ -55,6 +56,8 @@ void loop() {
   check_wifi();
   
   check_islive();
+
+  
   
   data = http_get(feed_url);
   
@@ -89,7 +92,8 @@ void loop() {
             Serial.println("game is on now!!");            
             current_game_id = game_result["id"];
             game_started = true;
-          }else if ((game_status != "FINAL") && (game_status != "FINAL OT")) {
+            announce_game_start();
+          }else if ((game_status != "FINAL") && (game_status != "FINAL OT") && (game_status != "FINAL SO")) {
             Serial.println("waiting for game to start");
           }
         }
@@ -129,6 +133,13 @@ void loop() {
   }  
 
   delay(interval);  
+  
+}
+
+void announce_game_start(){
+  Serial.println("Goal scored!");
+  tone(buzzer, 100, 1000);
+  tone(buzzer, 200, 1000);
   
 }
 
@@ -172,7 +183,6 @@ void check_wifi(){
     digitalWrite(wifi_led_pin, HIGH);
     delay(100);
     digitalWrite(wifi_led_pin, LOW);
-
   }
 }
 
