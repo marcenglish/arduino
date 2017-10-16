@@ -19,7 +19,6 @@ char ssid[] = "#";       // your network SSID (name)
 char password[] = "#";  // your network key
 char* feed_url = "http://live.nhle.com/GameData/RegularSeasonScoreboardv3.jsonp?loadScoreboard=jQuery110105207217424176633_1428694268811&_=1428694268812";
 
-String team = "Boston";
 String data;
 String gamedata;
 int buttonState = 0;         // variable for reading the pushbutton status
@@ -31,6 +30,8 @@ int opponent_goals = 0;
 String spread = "None";
 int spread_prev = 0;
 long previousMillis = 0; 
+long previousMillis_display = 0; 
+String team = "Tampa Bay";
 String teams[] = {"Anaheim", "Arizona", "Boston", "Buffalo", "Calgary", "Carolina", "Chicago", 
                   "Colorado", "Columbus", "Dallas", "Detroit", "Edmonton", "Florida", "Los Angeles", 
                   "Minnesota", "Montreal", "Nashville", "New Jersey", "NY Rangers", "NY Islanders", 
@@ -39,6 +40,7 @@ String teams[] = {"Anaheim", "Arizona", "Boston", "Buffalo", "Calgary", "Carolin
 
 WiFiClientSecure client;
 int count = 0;
+int buzzes = 0;
 void setup() {
   Serial.begin(115200);
   lcd.init();
@@ -75,6 +77,28 @@ void loop() {
 
     unsigned long currentMillis = millis();
 
+    buttonState = digitalRead(buttonPin);
+    if (buttonState == HIGH) {
+      announce_goal(); 
+    }
+
+    if(currentMillis - previousMillis_display > 10000) {
+        previousMillis_display = currentMillis;  
+
+        if (game_started == true){
+            display_clear();
+            display(team, 0);
+            display("Game is on now.", 1);
+            display(String(count), 2);
+            display(String(buzzes), 3);
+        }else{
+            display_clear();
+            display(team, 0);
+            display("Waiting for game.", 1);
+            display(String(count), 2);
+            display(String(buzzes), 3);
+        }
+    }
     if(currentMillis - previousMillis > interval) {
         previousMillis = currentMillis;  
 
@@ -83,7 +107,6 @@ void loop() {
         get_live_spread();
     
         Serial.println(spread);
-        
 
         if (spread == "None"){ //If no live game is current available
             if (game_started == true && spread_prev > 0){
@@ -103,14 +126,6 @@ void loop() {
 
         spread_prev = spread.toInt();
 
-        if (game_started == true){
-            display("Game is on now.", 0);
-            display(String(count), 1);
-        }else{
-            display("Waiting for game.", 0);
-            display(String(count), 1);
-        }
-
         count +=1;
     }
 }    
@@ -119,7 +134,7 @@ void loop() {
 void get_live_spread(){
 
     data = http_get(feed_url);
-
+    spread = "None";
     //JSON Parsing Prep
     //Shave start
     int start_index = data.indexOf('[');
@@ -142,26 +157,26 @@ void get_live_spread(){
         
         //A given team may have previous and upcoming games listed.  
         //Filter out the live game, get its game id and set home/away
-        if (game_started != true) {
-            if ((away_team == team) || (home_team == team)){
-                if (game_status == "LIVE"){
-                    game_started = true;
+        // if (game_started != true) {
+        if ((away_team == team) || (home_team == team)){
+            if (game_status == "LIVE"){
+                game_started = true;
 
-                    if (away_team == team){
-                        team_goals = game_result["ats"];
-                        opponent_goals = game_result["hts"];
-                    }
-                    
-                    if (home_team == team){
-                        team_goals = game_result["hts"];
-                        opponent_goals = game_result["ats"];
-                    }
-                
-                    int num_spread = team_goals - opponent_goals;
-                    spread = String(num_spread);
+                if (away_team == team){
+                    team_goals = game_result["ats"];
+                    opponent_goals = game_result["hts"];
                 }
-            }        
-        }
+                
+                if (home_team == team){
+                    team_goals = game_result["hts"];
+                    opponent_goals = game_result["ats"];
+                }
+            
+                int num_spread = team_goals - opponent_goals;
+                spread = String(num_spread);
+            }
+        }        
+        // }
         data = data.substring(end_index+2);
     }
 
@@ -196,7 +211,8 @@ void announce_goal(){
     tone(buzzer, 100, 100);
     delay(200);
     tone(buzzer, 200, 300);
-    delay(200);    
+    delay(200);   
+    buzzes += 1; 
 }
 
 void announce_win(){
