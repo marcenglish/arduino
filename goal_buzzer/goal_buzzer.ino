@@ -2,17 +2,25 @@
 #include <WiFiClientSecure.h>
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
-const int buttonPin = 2;     // the number of the pushbutton pin
-const int wifi_led_pin = 15;
+const int buttonPin = 14;     // the number of the pushbutton pin
+const int wifi_led_pin = 12;
 const int islive_pin = 13;
 const int pot_pin = 0;
+const int goal_sample_pin = 2;
 int prev_sensor_value = 0;
-#define buzzer 14
+ 
 
 #include <LiquidCrystal_I2C.h>  
 #include <Wire.h>
-
+// #define buttonPin 14
 LiquidCrystal_I2C lcd(0x3F, 20, 4);
+
+// #include <SD.h>          /            // need to include the SD library
+// #include <TMRpcm.h>                  //  also need to include this library...
+// TMRpcm tmrpcm;                      // create an object for use in this sketch
+// #define SD_ChipSelectPin 4         //This is how we debug the SD card
+
+
 
 //------- Replace the following! ------
 char ssid[] = "#";       // your network SSID (name)
@@ -43,6 +51,11 @@ int count = 0;
 int buzzes = 0;
 void setup() {
   Serial.begin(115200);
+  pinMode(goal_sample_pin, OUTPUT);
+  digitalWrite(goal_sample_pin, HIGH);   
+  delay(2000);
+
+
   lcd.init();
   lcd.backlight();  
 
@@ -74,10 +87,11 @@ void setup() {
 
 void loop() {
     delay(100);
-
+    digitalWrite(goal_sample_pin, HIGH);
     unsigned long currentMillis = millis();
-
+    //Test button
     buttonState = digitalRead(buttonPin);
+    Serial.println(buttonState);
     if (buttonState == HIGH) {
       announce_goal(); 
     }
@@ -185,17 +199,10 @@ void get_live_spread(){
 
 void announce_game_start(){
     Serial.println("Game Started!");
-    tone(buzzer, 100, 1000);
-    tone(buzzer, 200, 1000);
 }
 
 void announce_start(){
     Serial.println("Program Started!");
-    tone(buzzer, 100, 100);
-    delay(500);
-    tone(buzzer, 100, 100);
-    delay(500);
-    tone(buzzer, 500, 500);
 }
 
 
@@ -204,29 +211,14 @@ void announce_goal(){
     display_clear();
     display("Goal Scored!!", 2);
     display_clear();
-    tone(buzzer, 100, 100);
-    delay(200);
-    tone(buzzer, 100, 100);
-    delay(200);
-    tone(buzzer, 100, 100);
-    delay(200);
-    tone(buzzer, 200, 300);
-    delay(200);   
+    digitalWrite(goal_sample_pin, LOW);    
+    // delay(200);   
+    // digitalWrite(goal_sample_pin, HIGH);
     buzzes += 1; 
 }
 
 void announce_win(){
     Serial.println("We won!");
-    tone(buzzer, 300, 100);
-    delay(200);
-    tone(buzzer, 100, 100);
-    delay(200);
-    tone(buzzer, 300, 100);
-    delay(200);
-    tone(buzzer, 200, 300);
-    delay(200);    
-    tone(buzzer, 300, 600);
-    delay(200);
 }
 
 String http_get(String url){
