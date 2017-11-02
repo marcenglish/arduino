@@ -3,11 +3,14 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 const int buttonPin = 14;     // the number of the pushbutton pin
+const int buttonBPin = 4;     // the number of the pushbutton pin
+
 const int wifi_led_pin = 12;
 const int islive_pin = 13;
-const int pot_pin = 0;
-const int goal_sample_pin = 2;
-int prev_sensor_value = 0;
+// const int pot_pin = 0;
+const int goal_sample_pin = 3;
+const int win_sample_pin = 16;
+// int prev_sensor_value = 0;
  
 
 #include <LiquidCrystal_I2C.h>  
@@ -30,6 +33,7 @@ char* feed_url = "http://live.nhle.com/GameData/RegularSeasonScoreboardv3.jsonp?
 String data;
 String gamedata;
 int buttonState = 0;         // variable for reading the pushbutton status
+int buttonBState = 0;
 bool game_started = false;
 int interval = 10000;
 int current_game_id = 0;
@@ -39,7 +43,7 @@ String spread = "None";
 int spread_prev = 0;
 long previousMillis = 0; 
 long previousMillis_display = 0; 
-String team = "Tampa Bay";
+String team = "San Jose";
 String teams[] = {"Anaheim", "Arizona", "Boston", "Buffalo", "Calgary", "Carolina", "Chicago", 
                   "Colorado", "Columbus", "Dallas", "Detroit", "Edmonton", "Florida", "Los Angeles", 
                   "Minnesota", "Montreal", "Nashville", "New Jersey", "NY Rangers", "NY Islanders", 
@@ -52,7 +56,9 @@ int buzzes = 0;
 void setup() {
   Serial.begin(115200);
   pinMode(goal_sample_pin, OUTPUT);
+  pinMode(win_sample_pin, OUTPUT);
   digitalWrite(goal_sample_pin, HIGH);   
+  digitalWrite(win_sample_pin, HIGH);
   delay(2000);
 
 
@@ -60,9 +66,11 @@ void setup() {
   lcd.backlight();  
 
   pinMode(buttonPin, INPUT);
+  pinMode(buttonBPin, INPUT);
+  
   pinMode(wifi_led_pin, OUTPUT);
   pinMode(islive_pin, OUTPUT);
-  
+  digitalWrite(wifi_led_pin, HIGH);
   //Setup WIFI
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
@@ -79,7 +87,7 @@ void setup() {
   display(WiFi.localIP().toString(), 3);
   delay(1500);
   display_clear();
-  
+  digitalWrite(wifi_led_pin, LOW);
 
   announce_start();
   
@@ -88,12 +96,19 @@ void setup() {
 void loop() {
     delay(100);
     digitalWrite(goal_sample_pin, HIGH);
+    digitalWrite(win_sample_pin, HIGH);    
     unsigned long currentMillis = millis();
     //Test button
     buttonState = digitalRead(buttonPin);
     Serial.println(buttonState);
     if (buttonState == HIGH) {
       announce_goal(); 
+    }
+
+    buttonBState = digitalRead(buttonBPin);
+    Serial.println(buttonBState);
+    if (buttonBState == HIGH) {
+      announce_win(); 
     }
 
     if(currentMillis - previousMillis_display > 10000) {
@@ -210,15 +225,17 @@ void announce_goal(){
     Serial.println("Goal scored!");
     display_clear();
     display("Goal Scored!!", 2);
-    display_clear();
+    // display_clear();
     digitalWrite(goal_sample_pin, LOW);    
-    // delay(200);   
+    delay(450);   
     // digitalWrite(goal_sample_pin, HIGH);
     buzzes += 1; 
 }
 
 void announce_win(){
     Serial.println("We won!");
+    digitalWrite(win_sample_pin, LOW);    
+    delay(450);
 }
 
 String http_get(String url){
