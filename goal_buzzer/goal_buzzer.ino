@@ -3,7 +3,7 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 const int buttonPin = 14;     // the number of the pushbutton pin
-const int buttonBPin = 4;     // the number of the pushbutton pin
+// const int buttonBPin = 4;     // the number of the pushbutton pin
 
 const int wifi_led_pin = 12;
 const int islive_pin = 13;
@@ -43,7 +43,7 @@ String spread = "None";
 int spread_prev = 0;
 long previousMillis = 0; 
 long previousMillis_display = 0; 
-String team = "San Jose";
+String team = "Toronto";
 String teams[] = {"Anaheim", "Arizona", "Boston", "Buffalo", "Calgary", "Carolina", "Chicago", 
                   "Colorado", "Columbus", "Dallas", "Detroit", "Edmonton", "Florida", "Los Angeles", 
                   "Minnesota", "Montreal", "Nashville", "New Jersey", "NY Rangers", "NY Islanders", 
@@ -65,8 +65,9 @@ void setup() {
   lcd.init();
   lcd.backlight();  
 
-  pinMode(buttonPin, INPUT);
-  pinMode(buttonBPin, INPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+  digitalWrite(buttonPin, HIGH);
+//   pinMode(buttonBPin, INPUT);
   
   pinMode(wifi_led_pin, OUTPUT);
   pinMode(islive_pin, OUTPUT);
@@ -75,8 +76,8 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   WiFi.begin(ssid, password);
-  display("Connecting to ",0);
-  display(ssid, 1);
+  Serial.println("Connecting to ");
+  Serial.println(ssid);
   
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
@@ -105,11 +106,11 @@ void loop() {
       announce_goal(); 
     }
 
-    buttonBState = digitalRead(buttonBPin);
-    Serial.println(buttonBState);
-    if (buttonBState == HIGH) {
-      announce_win(); 
-    }
+    // buttonBState = digitalRead(buttonBPin);
+    // // Serial.println(buttonBState);
+    // if (buttonBState == HIGH) {
+    //   announce_win(); 
+    // }
 
     if(currentMillis - previousMillis_display > 10000) {
         previousMillis_display = currentMillis;  
